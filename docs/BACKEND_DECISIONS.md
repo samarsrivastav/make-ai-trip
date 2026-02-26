@@ -46,44 +46,7 @@ flowchart LR
 
 ---
 
-## 2. Why Python + FastAPI (separate from Next.js)?
-
-The frontend is Next.js (TypeScript). The agent stack is Python (LangChain/LangGraph, optional LLM SDKs). We could run agents inside Next.js via a subprocess or a separate service.
-
-```mermaid
-flowchart TB
-  subgraph A [Option A: Next.js API calls Python]
-    Next[Next.js]
-    Py[Python process or server]
-    Next -->|"fetch or child_process"| Py
-  end
-
-  subgraph B [Option B: Single Python backend]
-    Next2[Next.js]
-    FastAPI[FastAPI]
-    Next2 -->|"Proxy /api/plan"| FastAPI
-    FastAPI --> Graph[LangGraph]
-  end
-
-  subgraph chosen [Chosen: B]
-    direction TB
-    FastAPI2[FastAPI]
-    Graph2[LangGraph]
-    FastAPI2 --> Graph2
-  end
-```
-
-**Decision: Separate Python backend (FastAPI)**
-
-- **Python:** LangGraph and most LLM/agent libraries are Python-first. Keeping all agent logic in Python avoids reimplementing or bridging from Node.
-- **FastAPI:** Simple HTTP API, async, automatic OpenAPI docs. One service owns “run graph” and “resume graph”; Next.js only proxies and renders.
-- **No agents in Next.js:** Would require either running Python as a subprocess (operationally messy) or reimplementing the graph in JS (duplication, fewer libraries).
-
-**Result:** Backend = FastAPI + LangGraph. Frontend calls Next.js `/api/plan`, which proxies to `BACKEND_URL` (FastAPI). All agent state and API keys stay in the Python process.
-
----
-
-## 3. Why this node order (intent → research → budget → planner → coordinator)?
+## 2. Why this node order (intent → research → budget → planner → coordinator)?
 
 The workflow is strictly linear. Order was chosen so each step has the inputs it needs and approvals happen at meaningful moments.
 
@@ -120,7 +83,7 @@ flowchart LR
 
 ---
 
-## 4. Why three approval checkpoints (and where)?
+## 3. Why three approval checkpoints (and where)?
 
 The spec asked for human-in-the-loop at “destination shortlist, budget allocation, final itinerary.” We map that to three nodes that call `interrupt()`.
 
@@ -156,7 +119,7 @@ So the user can approve the final day-by-day plan before we produce booking link
 
 ---
 
-## 5. Why TypedDict + Pydantic for state?
+## 4. Why TypedDict + Pydantic for state?
 
 LangGraph needs a single state object that nodes read and update. We use a **TypedDict** for the graph and **Pydantic** for nested structures.
 
@@ -208,61 +171,7 @@ flowchart LR
 **Decision:** GraphState = TypedDict with optional keys and `decision_log: Annotated[list, operator.add]`. All nested data = Pydantic models so we can validate and serialize consistently.
 
 ---
-
-## 6. Why a dedicated “decision log” in state?
-
-The spec asked for **transparency**: show agent reasoning and research process. We could either stream messages to the client or accumulate a log in state.
-
-```mermaid
-flowchart LR
-  subgraph without_log [Without decision_log]
-    N1[Node A] --> N2[Node B] --> N3[Node C]
-    N1 -.->|"No shared record"| Client
-  end
-
-  subgraph with_log [With decision_log]
-    M1[Node A] -->|"append entry"| State[GraphState]
-    M2[Node B] -->|"append entry"| State
-    M3[Node C] -->|"append entry"| State
-    State -->|"decision_log in API response"| Client
-  end
-```
-
-**Decision: `decision_log` in state**
-
-- Each node appends one or more `DecisionLogEntry` (agent name, step, message, optional data).
-- The client receives full state (including `decision_log`) on every response, so the UI can show “why this hotel,” “why this allocation,” etc.
-- No extra streaming or side channel: transparency is part of the same state that drives the workflow.
-
----
-
-## 7. Why InMemorySaver for the checkpointer?
-
-LangGraph needs a checkpointer to save state at interrupts and restore it on resume. Options: in-memory, SQLite, Postgres.
-
-```mermaid
-flowchart TB
-  subgraph when [When to use what]
-    Dev[Development / demo]
-    Prod[Production]
-    Dev --> InMem[InMemorySaver]
-    Prod --> Persistent[Postgres / SQLite]
-  end
-
-  InMem -->|"No disk, no setup"| Fast[Fast iteration]
-  InMem -->|"Lost on restart"| Lost[State lost on restart]
-  Persistent -->|"Survives restart"| Survive[State survives]
-  Persistent -->|"Need DB"| Setup[Setup required]
-```
-
-**Decision: InMemorySaver for now**
-
-- Fits **development and demos**: no DB setup, same process.
-- **Trade-off:** State is lost when the backend restarts. For production we’d switch to a persistent checkpointer (e.g. LangGraph’s Postgres or SQLite adapter) so plans survive restarts and multiple instances can share state.
-
----
-
-## 8. Why regex/keyword intent parser (no LLM)?
+## 5. Why regex/keyword intent parser (no LLM)?
 
 Intent parsing could be done with an LLM (“extract destination, budget, days from this text”) or with rules (regex, keywords).
 
@@ -288,7 +197,7 @@ So the **decision** is “structured output (ParsedIntent) with a rule-based imp
 
 ---
 
-## 9. Why separate “approve” nodes instead of inline interrupts?
+## 6. Why separate “approve” nodes instead of inline interrupts?
 
 We could have called `interrupt()` inside the research, budget, or planner nodes. We use **dedicated nodes** (e.g. `approve_destinations`) instead.
 
@@ -315,7 +224,7 @@ flowchart LR
 
 ---
 
-## 10. Summary: decision → outcome
+## 7. Summary: decision → outcome
 
 ```mermaid
 flowchart LR
