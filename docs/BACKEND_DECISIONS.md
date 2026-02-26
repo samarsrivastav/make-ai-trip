@@ -315,34 +315,7 @@ flowchart LR
 
 ---
 
-## 10. Why POST for both “create plan” and “approve”?
-
-We have two ways to advance the graph: start a new plan (POST with `user_input`) or resume after approval (POST with `Command(resume)`). Both could be “POST to same URL with different body,” or we could use two endpoints.
-
-```mermaid
-flowchart TB
-  subgraph api_design [API design]
-    Create[POST /api/plan]
-    Approve[POST /api/plan/:id/approve]
-    Get[GET /api/plan/:id]
-  end
-
-  Create -->|"body: user_input"| New[New thread]
-  Approve -->|"body: resume"| Same[Same thread]
-  Get -->|"no body"| Read[Read state only]
-```
-
-**Decision: Separate endpoints for create vs approve**
-
-- **POST /api/plan** – Body: `{ "user_input": "..." }`. Creates a new thread (or returns a message if `thread_id` is sent without using approve). Invokes the graph from the start.
-- **POST /api/plan/:threadId/approve** – Body: `{ "resume": true }` or `{ "resume": { ... } }`. Resumes the graph for that thread. Keeps “start” and “continue” semantically and in code paths separate.
-- **GET /api/plan/:threadId** – Read-only. Returns current state for that thread (e.g. after page reload).
-
-Using **thread_id** in the path (and in LangGraph config) ties all requests for one plan to the same checkpointed state.
-
----
-
-## 11. Summary: decision → outcome
+## 10. Summary: decision → outcome
 
 ```mermaid
 flowchart LR
