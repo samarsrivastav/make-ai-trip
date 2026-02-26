@@ -15,16 +15,17 @@ def optimize_budget(state: GraphState) -> GraphState:
     """
     intent = state.get("parsed_intent")
     currency = (intent.currency if intent else None) or "INR"
-
+    total = (intent.budget_total if intent else None) or 15000.0
+    # Scale allocation to user's budget (keep same ratios)
+    scale = total / 15000.0
     allocation = BudgetAllocation(
-        transport=3000.0,
-        stay=4000.0,
-        food=3500.0,
-        activities=3500.0,
-        buffer=1000.0,
+        transport=round(3000.0 * scale, 0),
+        stay=round(4000.0 * scale, 0),
+        food=round(3500.0 * scale, 0),
+        activities=round(3500.0 * scale, 0),
+        buffer=round(1000.0 * scale, 0),
         currency=currency,
-        reasoning="Balanced for solo backpacking: transport (flights + local), "
-        "budget stay (hostel), food, and adventure activities.",
+        reasoning=f"Balanced allocation for {total:,.0f} {currency}: transport, stay, food, activities.",
     )
 
     new_entry = DecisionLogEntry(

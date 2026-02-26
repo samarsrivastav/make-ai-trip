@@ -15,30 +15,30 @@ def plan_itinerary(state: GraphState) -> GraphState:
     Build day-by-day itinerary; respects travel times and feasibility.
     """
     intent = state.get("parsed_intent")
-    num_days = (intent.num_days if intent else 4) or 4
-    researched = state.get("researched_data")
+    num_days = (intent.num_days if intent else None) or 4
+    destination = (intent.destination if intent else None) or "destination"
 
     days: list[DayPlan] = []
     for d in range(1, num_days + 1):
         items: list[DayItem] = []
         if d == 1:
             items = [
-                DayItem(time="06:00", title="Travel to Rishikesh", duration_minutes=315, description="Flight + cab"),
+                DayItem(time="06:00", title=f"Travel to {destination}", duration_minutes=315, description="Travel"),
                 DayItem(time="12:00", title="Check-in & lunch", duration_minutes=90),
-                DayItem(time="14:00", title="Explore Tapovan", duration_minutes=180),
-                DayItem(time="18:00", title="Ganga Aarti", duration_minutes=60),
+                DayItem(time="14:00", title=f"Explore {destination}", duration_minutes=180),
+                DayItem(time="18:00", title="Local evening activity", duration_minutes=60),
             ]
         elif d == 2:
             items = [
-                DayItem(time="08:00", title="White Water Rafting", duration_minutes=180, price=1500.0),
-                DayItem(time="12:00", title="Lunch by river", duration_minutes=60),
-                DayItem(time="14:00", title="Beach/relax", duration_minutes=180),
+                DayItem(time="08:00", title="Main activity", duration_minutes=180, price=1500.0),
+                DayItem(time="12:00", title="Lunch", duration_minutes=60),
+                DayItem(time="14:00", title="Sightseeing / relax", duration_minutes=180),
             ]
         else:
             items = [
-                DayItem(time="09:00", title="Morning activity / yoga", duration_minutes=120),
+                DayItem(time="09:00", title="Morning activity", duration_minutes=120),
                 DayItem(time="12:00", title="Lunch", duration_minutes=60),
-                DayItem(time="14:00", title="Local exploration", duration_minutes=240),
+                DayItem(time="14:00", title=f"Explore {destination}", duration_minutes=240),
             ]
         days.append(DayPlan(day=d, date=None, items=items))
 

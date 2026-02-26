@@ -20,22 +20,23 @@ def research(state: GraphState) -> GraphState:
     """
     intent = state.get("parsed_intent")
     destination = (intent.destination if intent else None) or "Rishikesh"
+    origin = (intent.origin if intent else None) or "Delhi"
 
     entries = [
         DecisionLogEntry(
             agent="research",
             step="fetch",
-            message=f"Researching destination: {destination}",
+            message=f"Researching destination: {destination} from {origin}",
             data=None,
         ),
     ]
 
-    # Demo data when APIs are not configured
+    # Demo data when APIs are not configured; labels use parsed intent
     researched = ResearchedData(
         flights=[
             FlightOption(
-                origin="Delhi",
-                destination="Dehradun",
+                origin=origin,
+                destination=destination,
                 departure="2025-03-01 06:00",
                 arrival="2025-03-01 07:15",
                 carrier="IndiGo",
@@ -47,35 +48,35 @@ def research(state: GraphState) -> GraphState:
         ],
         hotels=[
             HotelOption(
-                name="Zostel Rishikesh",
-                address="Tapovan, Rishikesh",
+                name=f"Stay at {destination}",
+                address=destination,
                 price_per_night=600.0,
                 currency="INR",
                 rating=4.5,
-                booking_link="https://www.zostel.com/",
-                map_link="https://maps.google.com/?q=Zostel+Rishikesh",
+                booking_link="https://www.booking.com/",
+                map_link=f"https://maps.google.com/?q={destination.replace(' ', '+')}",
                 is_demo=True,
             )
         ],
         activities=[
             ActivityOption(
-                name="White Water Rafting",
+                name=f"Top activity in {destination}",
                 type="adventure",
                 duration_minutes=180,
                 price=1500.0,
                 currency="INR",
-                booking_link="https://example.com/rafting",
-                map_link="https://maps.google.com/?q=Rishikesh+rafting",
+                booking_link="https://example.com/activities",
+                map_link=f"https://maps.google.com/?q={destination.replace(' ', '+')}",
                 is_demo=True,
             ),
             ActivityOption(
-                name="Evening Ganga Aarti",
+                name=f"Local experience in {destination}",
                 type="spiritual",
                 duration_minutes=60,
                 price=0.0,
                 currency="INR",
                 opening_hours="18:00",
-                map_link="https://maps.google.com/?q=Triveni+Ghat",
+                map_link=f"https://maps.google.com/?q={destination.replace(' ', '+')}",
                 is_demo=True,
             ),
         ],
@@ -89,7 +90,7 @@ def research(state: GraphState) -> GraphState:
                 conditions="Partly cloudy",
             )
         ],
-        local_tips=["Book rafting in advance in peak season."],
+        local_tips=[f"Book activities in {destination} in advance during peak season."],
     )
 
     entries.append(
